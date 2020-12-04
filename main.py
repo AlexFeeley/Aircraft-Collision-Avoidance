@@ -18,4 +18,3 @@ while plane.yPos != endY:
 
 print('The plane has successfully reached its destination: ', plane.destination())
 
-

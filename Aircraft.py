@@ -14,7 +14,7 @@ class Aircraft:
         self.yPos = y
 
         # Right (0), Up (90), Left (180), Down (270)
-        self.angle = 0
+        self.angle = None
 
         # Final Position
         self.xF = xFinal
@@ -24,7 +24,7 @@ class Aircraft:
     def setAngle(self, angle):
         if not (angle == 0 or angle == 90 or angle == 180 or angle == 270):
             raise IndexError('Direction must be between 0 and 3.')
-        elif abs(self.angle - angle) == 180:
+        elif self.angle is not None and abs(self.angle - angle) == 180:
             raise Exception('Aircraft can not turn around.')
         self.angle = angle
 
@@ -48,30 +48,22 @@ class Aircraft:
     def getYFinal(self):
         return self.yF
 
-    # Return true if in final X position
-    def xDestination(self):
-        return self.xPos == self.xF
+    # Distance between current and final x-positions
+    def xDistance(self):
+        return abs(self.xPos - self.xF)
 
-    # Return true if in final Y position
-    def yDestination(self):
-        return self.yPos == self.yF
+    # Distance between current and final y-positions
+    def yDistance(self):
+        return abs(self.yPos - self.yF)
 
     # Total distance left to destination
     def distance(self):
-        return abs(self.xF - self.xPos) + abs(self.yF - self.yPos)
+        return self.xDistance() + self.yDistance()
 
     # Advance aircraft one step in current direction
     def advance(self):
         self.xPos += (self.VELOCITY * math.cos(math.radians(self.angle)))
         self.yPos += (self.VELOCITY * math.sin(math.radians(self.angle)))
-
-    # Returns true if position is in danger zone of aircraft
-    def danger(self, x, y):
-        return abs(self.xPos - x) < 1 and abs(self.yPos - y) < 1
-
-    # Returns true if position is in communication zone of aircraft
-    def communication(self, x, y):
-        return abs(self.xPos - x) < 2 and abs(self.yPos - y) < 2
 
     # Returns an (x, y) representation of the plane
     def __repr__(self):

@@ -40,6 +40,14 @@ class Aircraft:
     def getYPos(self):
         return self.yPos
 
+    # Get next x-position of aircraft
+    def nextX(self):
+        return self.xPos + (self.VELOCITY * math.cos(math.radians(self.angle)))
+
+    # Get next y-position of aircraft
+    def nextY(self):
+        return self.yPos + (self.VELOCITY * math.sin(math.radians(self.angle)))
+
     # Final x-position of aircraft
     def getXFinal(self):
         return self.xF

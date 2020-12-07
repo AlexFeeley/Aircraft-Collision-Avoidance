@@ -4,10 +4,12 @@
 # its original location to its final destination.
 
 from Aircraft import *
+from Graph import *
 
 class SimpleController:
     def __init__(self, plane):
         self.plane = Aircraft(plane.getXPos(), plane.getYPos(), plane.getXFinal(), plane.getYFinal())
+        self.graph = Graph(plane) # Empty graph
 
     def run(self):
         # Move until x = xf
@@ -15,12 +17,14 @@ class SimpleController:
             self.setX()
             # while self.plane.xDistance() != 0:
             self.plane.advance()
-
         # Move until y = yf
-        if self.plane.yDistance() != 0:
+        elif self.plane.yDistance() != 0:
             self.setY()
             # while self.plane.yDistance() != 0:
             self.plane.advance()
+
+        # Add point to graph
+        self.graph.addPoint(self.plane.getXPos(), self.plane.getYPos())
 
     # Set x-direction of plane
     def setX(self):
@@ -39,3 +43,7 @@ class SimpleController:
     # Return true if plane has reached destination
     def success(self):
         return self.plane.xDistance() == 0 and self.plane.yDistance() == 0
+
+    # Show plot of run
+    def showPlot(self):
+        self.graph.createSimplePlot()

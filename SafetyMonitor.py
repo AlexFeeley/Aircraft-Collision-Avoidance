@@ -1,3 +1,8 @@
+# Alex Feeley
+# December 6, 2020
+# This class aims to monitor the safety of the complete controller by ensuring that
+# two aircraft never collide and that the aircraft never enter each other's danger
+# zones.
 
 
 class SafetyMonitor:
@@ -7,10 +12,10 @@ class SafetyMonitor:
 
     def error(self, plane1, plane2):
         # Current position of planes puts them in each others danger zones
-        if plane1.getXPos() - plane2.getXPos() < 0.5 and plane1.getYPos - plane2.getYPos() < 0.5:
+        if abs(plane1.getXPos() - plane2.getXPos()) < 0.5 and abs(plane1.getYPos() - plane2.getYPos()) < 0.5:
             self.danger = True
         # Next position of planes puts them in each others danger zones
-        elif plane1.nextX() - plane2.nextX() < 0.5 and plane1.nextY() - plane2.nextY() < 0.5:
+        elif abs(plane1.nextX() - plane2.nextX()) < 0.5 and abs(plane1.nextY() - plane2.nextY()) < 0.5:
             self.danger = True
         # Planes collide in the x-direction
         elif plane1.getYPos() == plane2.getYPos() and plane1.getXPos() == plane2.nextX() and \
@@ -23,8 +28,10 @@ class SafetyMonitor:
 
         return self.danger
 
+    # Method to 'reset' self.danger, used in internal calculations of complete controller
+    def reset(self):
+        self.danger = False
+
+    # Check safety
     def safety(self):
-        if self.danger:
-            print("The aircraft either collided or came into the other's danger zone.")
-        else:
-            print("The aircraft never collided or came into the other's danger zone. ")
+        return self.danger

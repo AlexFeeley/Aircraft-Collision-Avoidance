@@ -15,15 +15,11 @@ class SimpleController:
         # Move until x = xf
         if self.plane.xDistance() != 0:
             self.setX()
-            # while self.plane.xDistance() != 0:
             self.plane.advance()
         # Move until y = yf
         elif self.plane.yDistance() != 0:
             self.setY()
-            # while self.plane.yDistance() != 0:
             self.plane.advance()
-
-        # Add point to graph
         self.graph.addPoint(self.plane.getXPos(), self.plane.getYPos())
 
     # Set x-direction of plane

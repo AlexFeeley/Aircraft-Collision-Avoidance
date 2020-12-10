@@ -17,121 +17,128 @@ class CompleteController:
         self.safetyMonitor = SafetyMonitor() # External safety monitor
         self.checkSafety = SafetyMonitor() # Internal monitor for decision making
         self.graph = Graph(plane1, plane2) # Empty graph
-        self.switch1 = True # True if moving in x-direction for plane1
-        self.switch2 = True # True if moving in y-direction for plane2
+
+        self.last1X = True # Plane1 last moved in the x-direction
+        self.last2X = True # Plane2 last moved in the x-direction
 
     # Main algorithm
     def run(self):
-        # Aircraft not in communication zone and not at final destination
-        if not self.finalDestinations() and not self.communicationZone():
-            self.freeRun()
+        # Aircraft in communication zone
+        if self.communicationZone():
+            # Neither plane's final destination is in other's communication zone
+            if not self.plane1Check() and not self.plane2Check():
+                if self.plane1.xDistance() != 0 and self.plane2.yDistance() != 0:
+                    self.setXAngle1()
+                    self.setYAngle2()
+                elif self.plane1.yDistance() != 0 and self.plane2.xDistance() != 0:
+                    self.setYAngle1()
+                    self.setXAngle2()
+                elif self.plane1.yDistance() != 0 and self.plane2.yDistance() != 0: # Head-on, y-direction
+                    self.setXAngle2() # Plane 2 moves out of the way
+                elif self.plane1.xDistance() != 0 and self.plane2.xDistance() != 0: # Head on, x-direction
+                    self.setYAngle2() # Plane 2 moves out of the way
+                self.plane1.advance()
+                self.plane2.advance()
+            # Plane2's final destination is in plane1's communication zone
+            elif not self.plane1Check() and self.plane2Check():
+                if self.plane2.angle == 0 or self.plane2.angle == 180: # X-direction
+                    self.setYAngle1()
+                else: # Y-direction
+                    self.setXAngle1()
+                self.runPlane2()  # Plane2 continues, plane1 moves
+                self.plane1.advance()
+            # Plane1's final destination is in plane2's communication zone
+            elif self.plane1Check() and not self.plane2Check():
+                if self.plane1.angle == 0 or self.plane1.angle == 180: # X-direction
+                    self.setYAngle2()
+                else: # Y-direction
+                    self.setXAngle2()
+                self.runPlane1() # Plane1, continues, plane2 moves
+                self.plane2.advance()
 
-        # Aircraft in communication zone but not at final destination
-        elif not self.finalDestinations():
-            # Next 'step' will not cause a collision
-            if self.plane1.getDirection() is not None and self.plane2.getDirection() is not None and self.dangerZone():
-                self.checkSafety.reset()  # Reset internal safety monitor
-                self.changeDirection()  # Change direction as appropiate
-            self.freeRun()
-
-        # One plane has reached its destination, the other has not
+        # Aircraft cannot communicate, run normally
         else:
-            self.freeRun()
-
-    def changeDirection(self):
-        if self.switch1 == True and self.switch2 == True: # Both traveling in x-direction
-            if self.plane1.yDistance() > self.plane2.yDistance():
-                self.switch1 = False
-            else:
-                self.switch2 = False
-        elif self.switch2 == False and self.switch2 == False: # Both traveling in y-direction
-            if self.plane1.xDistance() > self.plane2.xDistance():
-                self.switch1 = True
-            else:
-                self.switch2 = True
-        elif self.switch1 == True and self.switch2 == False: # Plane1 in x, plane2 in y
-            if self.plane1.yDistance() > self.plane2.xDistance():
-                self.switch1 = False
-            else:
-                self.switch2 = True
-        elif self.switch1 == False and self.switch2 == True: # Plane1 in y, plane2 in x
-            if self.plane1.xDistance() > self.plane2.yDistance():
-                self.switch1 = True
-            else:
-                self.switch2 = False
-
-    # Aircraft are not in communication zone and not at final destination
-    def freeRun(self):
-        # self.safetyMonitor(self.plane1, self.plane2)
-        # Determine next direction
-        if self.switch1 and self.plane1.xDistance() != 0:
-            self.setX1()
-            self.plane1.advance()
-            self.switch1 = False
-            self.setY1()
-        elif self.plane1.yDistance() != 0:
-            self.setY1()
-            self.plane1.advance()
-            self.switch1 = True
-            self.setX1()
-        if self.switch2 and self.plane2.xDistance() != 0:
-            self.setX2()
-            self.plane2.advance()
-            self.switch2 = False
-            self.setY2()
-        elif self.plane2.yDistance() != 0:
-            self.setY2()
-            self.plane2.advance()
-            self.switch2 = True
-            self.setX2()
-
+            if self.plane1.xDistance() != 0 or self.plane1.yDistance() != 0:
+                self.runPlane1()
+            if self.plane2.xDistance() != 0 or self.plane2.yDistance() != 0:
+                self.runPlane2()
         self.graph.addPoints(self.plane1.getXPos(), self.plane1.getYPos(), self.plane2.getXPos(), self.plane2.getYPos())
+        self.showPlot()
 
-    # Determines if both planes are at their final destination
+    # Set angle in x-direction for plane1
+    def setXAngle1(self):
+        if self.plane1.getXPos() - self.plane1.getXFinal() > 0 or self.plane1.angle == 180:
+            self.plane1.setAngle(180)  # Left
+        else:
+            self.plane1.setAngle(0)  # Right
+
+    # Sets angle in y-direction for plane1
+    def setYAngle1(self):
+        if self.plane1.getYPos() - self.plane1.getYFinal() > 0 or self.plane1.angle == 270:
+            self.plane1.setAngle(270)  # Down
+        else:
+            self.plane1.setAngle(90)  # Up
+
+    # Sets angle in x-direction for plane2
+    def setXAngle2(self):
+        if self.plane2.getXPos() - self.plane2.getXFinal() > 0 or self.plane2.angle == 180:
+            self.plane2.setAngle(180)  # Left
+        else:
+            self.plane2.setAngle(0)  # Right
+
+    # Sets angle in y-direction for plane2
+    def setYAngle2(self):
+        if self.plane2.getYPos() - self.plane2.getYFinal() > 0 or self.plane2.angle == 270:
+            self.plane2.setAngle(270)  # Down
+        else:
+            self.plane2.setAngle(90)  # Up
+
+    # Runs plane1 normally
+    def runPlane1(self):
+        if self.plane1.xDistance() != 0:
+            self.setXAngle1()
+            if not self.last1X or self.plane1.yDistance() == 0:
+                self.plane1.advance() # Move in x-direction
+                self.last1X = not self.last1X
+
+        if self.plane1.yDistance() != 0:
+            self.setYAngle1()
+            if self.last1X or self.plane1.xDistance() == 0:
+                self.plane1.advance() # Move in y-direction
+
+    # Runs plane2 normally
+    def runPlane2(self):
+        if self.plane2.xDistance() != 0:
+            self.setXAngle2()
+            if not self.last2X or self.plane2.yDistance() == 0:
+                self.plane2.advance() # Move in x-direction
+
+        if self.plane2.yDistance() != 0:
+            self.setYAngle2()
+            if self.last2X or self.plane2.xDistance() == 0:
+                self.plane2.advance() # Move in y-direction
+                self.last2X = not self.last2X
+
+    # Determines if one plane is at its final destination
     def finalDestinations(self):
-        return self.plane1.xDistance() == 0 and self.plane1.yDistance() == 0 and \
-            self.plane2.xDistance() == 0 and self.plane2.yDistance() == 0
-
-    # Check if planes are within a 1km square of each other or will collide
-    # after 1 minute of moving
-    def dangerZone(self):
-        return self.checkSafety.error(self.plane1, self.plane2)
+        return (self.plane1.xDistance() == 0 and self.plane1.yDistance() == 0) and \
+               (self.plane2.xDistance() == 0 and self.plane2.yDistance() == 0)
 
     # Check if planes are within a 2km square of each other
     def communicationZone(self):
         return abs(self.plane1.getXPos() - self.plane2.getXPos()) <= 2 and abs(self.plane1.getYPos() - self.plane2.getYPos()) <= 2
 
-    # Set x-direction of plane1
-    def setX1(self):
-        if self.plane1.getXFinal() - self.plane1.getXPos() > 0:
-            self.plane1.setAngle(0)
-        elif self.plane1.getXFinal() - self.plane1.getXPos() < 0:
-            self.plane1.setAngle(180)
+    # Check if plane1's final position is within plane2's communication zone
+    def plane1Check(self):
+        return abs(self.plane1.getXFinal() - self.plane2.getXPos()) <= 2 and abs(self.plane1.getYFinal() - self.plane2.getYPos()) <= 2
 
-    # Set y-direction of plane1
-    def setY1(self):
-        if self.plane1.getYFinal() - self.plane1.getYPos() > 0:
-            self.plane1.setAngle(90)
-        elif self.plane1.getYFinal() - self.plane1.getYPos() < 0:
-            self.plane1.setAngle(270)
-
-    # Set x-direction of plane2
-    def setX2(self):
-        if self.plane2.getXFinal() - self.plane2.getXPos() > 0:
-            self.plane2.setAngle(0)
-        elif self.plane2.getXFinal() - self.plane2.getXPos() < 0:
-            self.plane2.setAngle(180)
-
-    # Set y-direction of plane2
-    def setY2(self):
-        if self.plane2.getYFinal() - self.plane2.getYPos() > 0:
-            self.plane2.setAngle(90)
-        elif self.plane2.getYFinal() - self.plane2.getYPos() < 0:
-            self.plane2.setAngle(270)
+    # Check if plane2's final position is within plane1's communication zone
+    def plane2Check(self):
+        return abs(self.plane2.getXFinal() - self.plane1.getXPos()) <= 2 and abs(self.plane2.getYFinal() - self.plane1.getYPos()) <= 2
 
     # Show plot of run
     def showPlot(self):
         self.graph.createCompletePlot()
 
-    def checkSafety(self):
-        return self.safetyMonitor.safety()
+    # def checkSafety(self):
+    #     return self.safetyMonitor.safety()

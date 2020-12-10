@@ -17,6 +17,10 @@ class Aircraft:
         # Right (0), Up (90), Left (180), Down (270)
         self.angle = None
 
+        # Last position, for safety monitoring purposes
+        self.xLast = None
+        self.yLast = None
+
         # Final Position
         self.xF = xFinal
         self.yF = yFinal
@@ -25,8 +29,8 @@ class Aircraft:
     def setAngle(self, angle):
         if not (angle == 0 or angle == 90 or angle == 180 or angle == 270):
             raise IndexError('Direction must be between 0 and 270.')
-        # elif self.angle is not None and abs(self.angle - angle) == 180:
-        #     raise Exception('Aircraft can not turn around.')
+        elif self.angle is not None and abs(self.angle - angle) == 180:
+            raise Exception('Aircraft can not turn around.')
         self.angle = angle
 
     # Get current angle of movement for the aircraft
@@ -71,6 +75,8 @@ class Aircraft:
 
     # Advance aircraft one step in current direction
     def advance(self):
+        self.xLast = self.xPos
+        self.yLast = self.yPos
         self.xPos += int(self.VELOCITY * math.cos(math.radians(self.angle)))
         self.yPos += int(self.VELOCITY * math.sin(math.radians(self.angle)))
 

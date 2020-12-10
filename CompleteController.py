@@ -15,7 +15,6 @@ class CompleteController:
         self.plane2 = Aircraft(plane2.getXPos(), plane2.getYPos(), plane2.getXFinal(), plane2.getYFinal())
 
         self.safetyMonitor = SafetyMonitor() # External safety monitor
-        self.checkSafety = SafetyMonitor() # Internal monitor for decision making
         self.graph = Graph(plane1, plane2) # Empty graph
 
         self.last1X = True # Plane1 last moved in the x-direction
@@ -62,6 +61,9 @@ class CompleteController:
                 self.runPlane1()
             if self.plane2.xDistance() != 0 or self.plane2.yDistance() != 0:
                 self.runPlane2()
+
+        # Send output to safety monitor, add points to graph
+        self.safetyMonitor.error(self.plane1, self.plane2)
         self.graph.addPoints(self.plane1.getXPos(), self.plane1.getYPos(), self.plane2.getXPos(), self.plane2.getYPos())
         self.showPlot()
 
@@ -140,5 +142,5 @@ class CompleteController:
     def showPlot(self):
         self.graph.createCompletePlot()
 
-    # def checkSafety(self):
-    #     return self.safetyMonitor.safety()
+    def checkSafety(self):
+        return self.safetyMonitor.safety()
